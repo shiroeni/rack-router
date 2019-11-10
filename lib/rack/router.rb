@@ -1,22 +1,24 @@
+# frozen_string_literal: true
+
 require 'rack/route'
 
 module Rack
-
   class Router
-    VERSION = "0.6.0"
+    VERSION = '0.6.0'
 
-    HEAD = 'HEAD'.freeze
-    GET = 'GET'.freeze
-    PATCH = 'PATCH'.freeze
-    POST = 'POST'.freeze
-    PUT = 'PUT'.freeze
-    DELETE = 'DELETE'.freeze
-    REQUEST_METHOD = 'REQUEST_METHOD'.freeze
-    PATH_INFO = 'PATH_INFO'.freeze
-    ROUTE_PARAMS = 'rack.route_params'.freeze
+    HEAD = 'HEAD'
+    GET = 'GET'
+    PATCH = 'PATCH'
+    POST = 'POST'
+    PUT = 'PUT'
+    DELETE = 'DELETE'
+    REQUEST_METHOD = 'REQUEST_METHOD'
+    PATH_INFO = 'PATH_INFO'
+    ROUTE_PARAMS = 'rack.route_params'
 
     def initialize(&block)
       @named_routes = {}
+      @routes = []
       routes(&block)
     end
 
@@ -49,10 +51,14 @@ module Rack
       route(DELETE, route_spec)
     end
 
+    def not_found(route_spec)
+      route(GET, route_spec)
+    end
+
     def route(method, route_spec)
-      route = Route.new(method, route_spec.first.first, route_spec.first.last, route_spec.reject{|k,_| k == route_spec.first.first })
-      @routes ||= []
-      @routes << route
+      route = Route.new(method, route_spec.first.first, route_spec.first.last, route_spec.reject { |k, _| k == route_spec.first.first })
+      routes.push(route)
+
       if route_spec && route_spec[:as]
         # Using ||= so the first route with that name will be returned
         @named_routes[route_spec[:as].to_sym] ||= route_spec.first.first
@@ -61,7 +67,7 @@ module Rack
     end
 
     def call(env)
-      if app = match(env)
+      if (app = match(env))
         app.call(env)
       else
         not_found(env)
@@ -85,8 +91,8 @@ module Rack
       [
         404,
         {
-          "Content-Type" => "text/html",
-          "Content-Length" => body.length.to_s
+          'Content-Type' => 'text/html',
+          'Content-Length' => body.length.to_s
         },
         [body]
       ]
